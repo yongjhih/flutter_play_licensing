@@ -3,13 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_play_licensing/flutter_play_licensing.dart';
 
 void main() {
-  const MethodChannel channel = MethodChannel('flutter_play_licensing');
+  const MethodChannel channel = MethodChannel('play_licensing');
 
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
     channel.setMockMethodCallHandler((MethodCall methodCall) async {
-      return '42';
+      return false;
     });
   });
 
@@ -17,7 +17,7 @@ void main() {
     channel.setMockMethodCallHandler(null);
   });
 
-  test('getPlatformVersion', () async {
-    expect(await FlutterPlayLicensing.platformVersion, '42');
+  test('isAllowed', () async {
+    expect(await PlayLicensing.isAllowed(), false);
   });
 }

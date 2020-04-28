@@ -2,12 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-class FlutterPlayLicensing {
+class PlayLicensing {
   static const MethodChannel _channel =
-      const MethodChannel('flutter_play_licensing');
+      const MethodChannel('play_licensing');
 
-  static Future<String> get platformVersion async {
-    final String version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
+  static Future<int> get check async {
+    final int reason = await _channel.invokeMethod('check');
+    return reason;
+  }
+
+  static Future<bool> isAllowed({
+    /// In hex
+    /// Prefer to initialize PlayLicensing.salt in native
+    String salt,
+  }) async {
+    return await _channel.invokeMethod('isAllowed', salt);
   }
 }
