@@ -8,6 +8,7 @@ import androidx.annotation.NonNull
 import com.google.android.vending.licensing.AESObfuscator
 import com.google.android.vending.licensing.LicenseChecker
 import com.google.android.vending.licensing.LicenseCheckerCallback
+import com.google.android.vending.licensing.LicenseCheckerCallback.*
 import com.google.android.vending.licensing.ServerManagedPolicy
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
@@ -97,7 +98,36 @@ public class FlutterPlayLicensingPlugin(private val registrar: Registrar? = null
                 result.onMain().success(false)
               },
               onApplicationError = { errorCode ->
-                result.onMain().errors(errorCode.toString(), details = errorCode)
+                when (errorCode) {
+                  ERROR_MISSING_PERMISSION -> {
+                    result.onMain().errors(errorCode.toString(),
+                            "ERROR_MISSING_PERMISSION",
+                            details = errorCode)
+                  }
+                  ERROR_CHECK_IN_PROGRESS -> {
+                    result.onMain().errors(errorCode.toString(),
+                            "ERROR_CHECK_IN_PROGRESS",
+                            details = errorCode)
+                  }
+                  //ERROR_NON_MATCHING_UID -> {
+                  //  result.onMain().errors(errorCode.toString(),
+                  //          "ERROR_NON_MATCHING_UID",
+                  //          details = errorCode)
+                  //}
+                  //ERROR_INVALID_PACKAGE_NAME -> {
+                  //  result.onMain().errors(errorCode.toString(),
+                  //          "ERROR_INVALID_PACKAGE_NAME",
+                  //          details = errorCode)
+                  //}
+                  //ERROR_INVALID_PUBLIC_KEY -> {
+                  //  result.onMain().errors(errorCode.toString(),
+                  //          "ERROR_INVALID_PUBLIC_KEY",
+                  //          details = errorCode)
+                  //}
+                  else -> {
+                    result.onMain().success(false)
+                  }
+                }
               }
       )
     } ?: result.notImplemented()
