@@ -1,9 +1,14 @@
 package com.github.yongjhih.flutter_play_licensing
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import androidx.annotation.NonNull
-import com.google.android.vending.licensing.*
+import com.google.android.vending.licensing.AESObfuscator
+import com.google.android.vending.licensing.LicenseChecker
+import com.google.android.vending.licensing.LicenseCheckerCallback
+import com.google.android.vending.licensing.ServerManagedPolicy
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -86,13 +91,13 @@ public class FlutterPlayLicensingPlugin(private val registrar: Registrar? = null
               call.argument<String>("publicKey"))
       checker.checkAccess(
               onAllow = {
-                result.success(true)
+                result.onMain().success(true)
               },
               onDontAllow = {
-                result.success(false)
+                result.onMain().success(false)
               },
               onApplicationError = { errorCode ->
-                result.errors(errorCode.toString(), details = errorCode)
+                result.onMain().errors(errorCode.toString(), details = errorCode)
               }
       )
     } ?: result.notImplemented()
@@ -105,13 +110,13 @@ public class FlutterPlayLicensingPlugin(private val registrar: Registrar? = null
                 call.argument<String>("publicKey"))
         checker.checkAccess(
                 onAllow = { reason ->
-                  result.success(reason)
+                  result.onMain().success(reason)
                 },
                 onDontAllow = { reason ->
-                  result.errors(reason.toString(), details = reason)
+                  result.onMain().errors(reason.toString(), details = reason)
                 },
                 onApplicationError = { errorCode ->
-                  result.errors(errorCode.toString(), details = errorCode)
+                  result.onMain().errors(errorCode.toString(), details = errorCode)
                 }
         )
       } ?: result.notImplemented()
@@ -137,6 +142,33 @@ fun LicenseChecker.checkAccess(onAllow: (Int) -> Unit = { _ -> },
       onApplicationError(errorCode)
     }
   })
+}
+
+fun Result.onMain(): ResultOnMain {
+  return if (this is ResultOnMain) {
+    this
+  } else {
+    ResultOnMain(this)
+  }
+}
+
+class ResultOnMain(private val result: Result) : Result {
+  private val handler: Handler by lazy {
+    Handler(Looper.getMainLooper())
+  }
+
+  override fun success(res: Any?) {
+    handler.post { result.success(res) }
+  }
+
+  override fun error(
+          errorCode: String, errorMessage: String?, errorDetails: Any?) {
+    handler.post { result.error(errorCode, errorMessage, errorDetails) }
+  }
+
+  override fun notImplemented() {
+    handler.post { result.notImplemented() }
+  }
 }
 
 fun <T> MethodCall.argumentOrNull(key: String): T? = try { argument(key) } catch (e: Throwable) { null }
