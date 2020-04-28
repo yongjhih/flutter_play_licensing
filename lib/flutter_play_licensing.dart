@@ -6,7 +6,7 @@ class PlayLicensing {
   static const MethodChannel _channel =
       const MethodChannel('play_licensing');
 
-  static Future<int> get check({
+  static Future<int> check({
     /// In hex
     /// Prefer to initialize PlayLicensing.salt in native
     String salt,
