@@ -4,7 +4,6 @@ import android.content.Context
 import android.provider.Settings
 import androidx.annotation.NonNull
 import com.google.android.vending.licensing.*
-import com.google.android.vending.licensing.Policy.NOT_LICENSED
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -64,30 +63,32 @@ public class FlutterPlayLicensingPlugin(private val registrar: Registrar? = null
     }
   }
 
-  private fun Context.checker(salt: ByteArray = PlayLicensingConfig.salt,
-                         publicKey: String = PlayLicensingConfig.publicKey): LicenseChecker {
+  private fun Context.checker(salt: ByteArray? = null,
+                              publicKey: String? = null): LicenseChecker {
     return LicenseChecker(
             this,
             ServerManagedPolicy(
                     this,
                     AESObfuscator(
-                            salt,
+                            salt ?: PlayLicensingConfig.salt,
                             packageName,
                             Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
                     )
             ),
-            publicKey
+            publicKey ?: PlayLicensingConfig.publicKey
     )
   }
 
   private fun isAllowed(@NonNull call: MethodCall, @NonNull result: Result) {
     registrar?.context()?.let { context ->
-      val checker = context.checker()
+      val checker = context.checker(
+              call.argument<String>("salt")?.toHexByteArray,
+              call.argument<String>("publicKey"))
       checker.checkAccess(
-              onAllow = { _ ->
+              onAllow = {
                 result.success(true)
               },
-              onDontAllow = { _ ->
+              onDontAllow = {
                 result.success(false)
               },
               onApplicationError = { errorCode ->
@@ -99,7 +100,9 @@ public class FlutterPlayLicensingPlugin(private val registrar: Registrar? = null
 
   private fun check(@NonNull call: MethodCall, @NonNull result: Result) {
       registrar?.context()?.let { context ->
-        val checker = context.checker()
+        val checker = context.checker(
+                call.argument<String>("salt")?.toHexByteArray,
+                call.argument<String>("publicKey"))
         checker.checkAccess(
                 onAllow = { reason ->
                   result.success(reason)
